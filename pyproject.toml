@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wgm_api"
-version = "0.1.0"
+version = "0.1.3"
 description = "A Python client library for managing WireGuard server users and sessions."
 authors = ["Andrey Ivanov <andrey.ivanov.dev13@gmail.com>"]
 readme = "README.md"
@@ -12,3 +12,6 @@ requests = "^2.32.3"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[project.urls]
+HomePage = "https://github.com/LostUnion/WGM"

@@ -49,6 +49,19 @@ session.delete_user(value="existing_user")
 - **enable_user(value)** — Enables the user (by name or ID).
 - **disable_user(value)** — Disables the user. (by name or ID).
 
+## PyPI
+
+The `WGM` library is available on [PyPI](https://pypi.org/project/wgm_api/), making it easy to install and integrate into your projects.
+
+Install it via `pip`:
+```bash
+pip install wgm_api
+```
+Or poetry:
+```bash
+poetry add wgm_api
+```
+
 <div align="center">
 
 ## Libraries in this project
