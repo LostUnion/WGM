@@ -20,6 +20,7 @@ Usage:
 Dependencies:
     - requests
     - json
+    - logging
 
 Example:
     session = WGM_api()
