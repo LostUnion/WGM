@@ -33,6 +33,7 @@ Example:
 import requests
 import json
 import logging
+import os
 
 logging.basicConfig(
     level=logging.INFO,
@@ -132,39 +133,55 @@ class WGM_api:
             logger.error(f"Error occurred while fetching users: {e}")
             raise
 
-        
-    def data_manipulation(self, value, action, endpoint_suffix="", payload=None, success_message="", not_found_message=""):
+    def data_manipulation(self, value, action, endpoint_suffix="", payload=None, success_message="", not_found_message="", path=""):
         r"""
-        Sends a request using a method from the action value to manipulate the
-        configuration data of a specific user by name or ID.
+        Performs a specified action on a user's data by sending an HTTP request to the server.
 
-        :param value:
-            The ID of the user to be manipulated. 
-            Can be either a user ID or a username (str).
+        This method facilitates actions such as creating, deleting, updating, or retrieving 
+        data for a user. It identifies the user by their ID or username, constructs the 
+        appropriate endpoint URL, and sends the request using the specified HTTP method.
 
-        :param action:
-            The HTTP method to be used for the request. Common values are:
-                - 'DELETE': to remove the user.
-                - 'PUT': to update user information (e.g., rename).
-                - 'POST': to enable or disable the user.
-            Must be a valid HTTP method supported by the API.
+        If the action involves downloading a configuration file (`endpoint_suffix="/configuration"`),
+        the file is saved to the specified directory. If the directory does not exist, it will 
+        be created automatically.
+
+        :param value: 
+            The identifier of the user. This can be:
+            - User ID (str): A unique identifier for the user.
+            - Username (str): The name of the user in the system.
+
+        :param action: 
+            The HTTP method to be used for the request. Common actions include:
+            - 'GET': To retrieve data (e.g., download configuration).
+            - 'POST': To create new data.
+            - 'PUT': To update existing data.
+            - 'DELETE': To delete data.
 
         :param endpoint_suffix: 
-            An optional suffix for the API endpoint (e.g., "/name/" for renaming a user). Default is an empty string.
+            (Optional) A suffix to be added to the API endpoint URL (e.g., "/configuration" 
+            for downloading configuration). Default is an empty string.
 
         :param payload: 
-            The data to be sent in the request body (e.g., for updating user details). Default is `None`.
+            (Optional) Data to be included in the request body, typically used for 
+            'POST' or 'PUT' requests. Default is `None`.
 
         :param success_message: 
-            The message to display if the request is successful. Default is an empty string.
+            A message logged if the request is successful. Default is an empty string.
 
         :param not_found_message: 
-            The message to display if the user is not found (404 response). Default is an empty string.
+            A message logged if the user is not found (404 response). Default is an empty string.
+
+        :param path: 
+            (Optional) The directory where configuration files should be saved if 
+            the action involves downloading configurations. Default is an empty string.
+            - If the directory does not exist, it will be created automatically.
+            - If no path is specified, files will be saved to the current working directory.
 
         :return: 
-            `True` if the action is successfully executed, `False` otherwise.
+            - `True` if the action is successfully completed.
+            - `False` if the action fails or the user is not found.
+            - For configuration downloads, the file will be saved to the specified directory.
         """
-
         try:
             logger.info(f"Attempting to manipulate data for user: {value} using action: {action}.")
             users = self.get_all_users()
@@ -180,8 +197,21 @@ class WGM_api:
                     if response.status_code == 404:
                         logger.warning(f"User {value} not found on server. {not_found_message}")
                         return False
-                    elif response.status_code == 200 or response.status_code == 204:  # Assuming 200/204 success codes for the action
+                    elif response.status_code in [200, 204]:  # Assuming 200/204 success codes for the action
                         logger.info(f"Action {action} on user {value} was successful. {success_message}")
+                        if endpoint_suffix == "/configuration":
+                            name = user["name"]
+
+                            # Ensure the directory exists
+                            os.makedirs(path, exist_ok=True)
+
+                            # Path to the configuration file
+                            path_to_config = os.path.join(path, f"{name}.conf")
+                            with open(path_to_config, "wb") as file:
+                                file.write(response.content)
+                                logger.info(f"The {name}.conf configuration file has been generated at {path_to_config}.")
+                            return True
+
                         return True
                     else:
                         logger.error(f"Failed to perform {action} on user {value}. Status code: {response.status_code}. Response: {response.text}")
@@ -195,7 +225,8 @@ class WGM_api:
             logger.error(f"Error occurred while performing action on user {value}: {e}")
             raise  # Re-raise the exception to handle it higher up
 
-    def create_user(self, name: str):
+
+    def create_user(self, name: str, download_config: bool = False, path: str = "."):
         r"""
         Creates a new user in the system with a unique name.
 
@@ -243,6 +274,8 @@ class WGM_api:
             else:
                 if res.status_code == 200 or res.status_code == 201:
                     logger.info(f"User {name} successfully created. Response status code: {res.status_code}")
+                    if download_config:
+                        self.download_config(name, path)
                     return True
                 else:
                     logger.error(f"Failed to create user {name}. Status code: {res.status_code}. Response: {res.text}")
@@ -251,6 +284,55 @@ class WGM_api:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error occurred while creating user {name}: {e}")
             raise  # Re-raise the exception to handle it higher up
+
+    def download_config(self, value, path=""):
+        r"""
+        Downloads a configuration file for a user.
+
+        This method sends a `GET` request to the server to retrieve a user's 
+        configuration file. If the configuration is successfully generated, it 
+        will be saved to the specified `path`. If no path is provided, the default 
+        behavior depends on the implementation of `self.data_manipulation`.
+
+        :param value:
+            The identifier of the user whose configuration is to be downloaded.
+            This can be one of the following:
+            - User ID (str): A unique numerical identifier for the user.
+            - Username (str): The name of the user in the system.
+
+        :param path: 
+            (Optional) The file path where the configuration will be saved.
+            If not provided, the default behavior of the `self.data_manipulation`
+            method will determine the file's location. 
+
+            *Note*: If saving to a specific location is required, ensure this
+            parameter is set explicitly.
+
+        :return:
+            - `True` if the configuration file is successfully generated and saved.
+            - `False` if there is an error during the configuration process.
+        """
+
+        try:
+            request = self.data_manipulation(
+                value=value,
+                action='GET',
+                endpoint_suffix="/configuration",
+                success_message="The configuration has been downloaded.",
+                not_found_message="The configuration was not found.",
+                path=path
+            )
+
+            if request:
+                logger.info(f"The configuration file has been successfully generated.")
+                return True
+            else:
+                logger.warning("An error occurred during the formation of the configuration file.")
+                return False
+
+        except Exception as e:
+            logger.error(f"An error occurred while downloading the user configuration {value}: {e}")
+
         
     def delete_user(self, value):
         r"""
@@ -353,4 +435,3 @@ class WGM_api:
         except Exception as e:
             logger.error(f"Error occurred while disabling user {value}: {e}")
             raise  # Re-raise the exception to handle it higher up
-
