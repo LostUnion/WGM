@@ -202,10 +202,6 @@ class WGM_api:
                         if endpoint_suffix == "/configuration":
                             name = user["name"]
 
-                            # Ensure the directory exists
-                            os.makedirs(path, exist_ok=True)
-
-                            # Path to the configuration file
                             path_to_config = os.path.join(path, f"{name}.conf")
                             with open(path_to_config, "wb") as file:
                                 file.write(response.content)
