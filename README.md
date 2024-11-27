@@ -48,6 +48,7 @@ session.delete_user(value="existing_user")
 - **delete_user(value)** — Deletes a user (by name or ID).
 - **enable_user(value)** — Enables the user (by name or ID).
 - **disable_user(value)** — Disables the user. (by name or ID).
+- **download_config(value)** — Download config file the user. (by name or ID).
 
 ## PyPI
 
