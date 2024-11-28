@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "wgm_api"
-version = "0.1.5"
+name = "WGM_api"
+version = "0.1.18"
 description = "A Python client library for managing WireGuard server users and sessions."
 authors = ["Andrey Ivanov <andrey.ivanov.dev13@gmail.com>"]
 readme = "README.md"

@@ -1,1 +1,2 @@
-from .wgm import WGM_api
+from WGM_api.wgm import WGM_api
+

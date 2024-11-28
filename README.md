@@ -23,7 +23,7 @@ This will install all the dependencies specified in project.toml.
 ## Using WGM
 
 ```python
-import WGM_api
+from WGM_api import WGM_api
 
 # Session initialization #
 session = WGM_api()
