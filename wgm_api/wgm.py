@@ -36,6 +36,7 @@ import json
 import logging
 import requests
 
+from abc import ABC, abstractmethod
 
 class LoggingColorFormatter(logging.Formatter):
     COLORS = {
@@ -65,16 +66,37 @@ logger.disabled = True
 
 logger = logging.getLogger(__name__)
 
-
-class WGM_api:
-    _ip_address = None
-    _port = None
-    _password = None
-
-    _api_clients = "api/wireguard/client"
+class APIClient(ABC):
 
     def __init__(self):
         self.session = requests.Session()
+
+    @abstractmethod
+    def start_session(self,
+                      ip_address:str,
+                      port: int,
+                      password: str):
+        pass
+
+    @abstractmethod
+    def get_all_users(self):
+        pass
+
+    @abstractmethod
+    def create_user(self, name: str):
+        pass
+
+    @abstractmethod
+    def delete_user(self, value):
+        pass
+
+class WGM_api(APIClient):
+
+    def __init__(self):
+        super().__init__()
+        self._port = None
+        self._password = None
+        self._api_clients = "api/wireguard/client"
 
     def start_session(self, ip_address: str, port: int, password: str):
         r"""
